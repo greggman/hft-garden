@@ -1,0 +1,15 @@
+{
+  "dependencies": {},
+  "description": "An interactive garden",
+  "happyFunTimes": {
+    "name": "Garden",
+    "apiVersion": "1.12.0",
+    "category": "example",
+    "gameId": "hft-garden",
+    "gameType": "html",
+    "minPlayers": 1
+  },
+  "name": "Garden",
+  "private": false,
+  "version": "0.0.1"
+}
