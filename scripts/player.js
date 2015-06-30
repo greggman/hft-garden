@@ -61,7 +61,7 @@ define(
 //      this.mesh = new THREE.Mesh(services.geometry.playerMesh, this.material);
 //      this.leaf = new THREE.Object3D();
       var wingNdx = playerNumber++;
-      var colorNdx = wingNdx / services.wingTextures.length | 0;
+      var colorNdx = playerNumber; //wingNdx / services.wingTextures.length | 0;
       var wing = services.wingTextures[wingNdx % services.wingTextures.length];
       // Pick a color
       var hueAdjust = (((colorNdx & 0x01) << 5) |

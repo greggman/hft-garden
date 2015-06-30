@@ -53,7 +53,7 @@ define([
       //wireframe: true,
     });
     this.hue = rand.plusMinus(0.05) + 0.0
-    this.material.color.setHSL(this.hue, 0.2, 1);
+    this.material.color.setHSL(this.hue, 0.1, 0.2);
     this.origColor = this.material.color.clone();
     this.root = new THREE.Mesh(services.geometry.goalMesh, this.material);
     this.services.scene.add(this.root);
@@ -105,7 +105,7 @@ define([
     if (v.z > globals.areaFront) {
       this.flashing = true;
       //var adjust = Math.sin(globals.gameTime * 40 + this.timer) * 0.25;
-      this.material.color.setHSL(this.hue, 1, 0.5);
+      this.material.color.setHSL(this.hue, 1, 0.2);
     } else {
       if (this.flashing) {
         this.flashing = false;

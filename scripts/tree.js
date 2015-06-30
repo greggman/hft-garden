@@ -48,7 +48,7 @@ define([
     //var indices = new Uint16Array( numTriangles * 3 );
 
     var numBranches = options.numBranches || 2;
-    var baseColor = 0x80FF00;
+    var baseColor = 0x808080; //0x80FF00;
 
     if (options.numLeaves) {
       var leafTexture = rand.element(services.leafTextures);
@@ -68,7 +68,7 @@ define([
     this.material = new THREE.MeshPhongMaterial({
       ambient: 0x808080,
       color: baseColor,
-      specular: 0xFFFFFF,
+      specular: 0, //0xFFFFFF,
       shininess: 30,
       shading: THREE.FlatShading,
 //      shading: THREE.SmoothShading,

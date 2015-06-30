@@ -38,7 +38,7 @@ vec3 hsv2rgb(vec3 c) {
 
 void main() {
   vec4 color = texture2D(texture, vUv);
-  if (color.a < 0.1) {
+  if (color.a < 0.5) {
     discard;
   }
   vec3 hsv = rgb2hsv(color.rgb);
@@ -51,6 +51,8 @@ void main() {
 <script src="3rdparty/js/SkyShader.js"></script>
 
 <script src="3rdparty/js/shaders/CopyShader.js"></script>
+<script src="3rdparty/js/shaders/ConvolutionShader.js"></script>
+<script src="3rdparty/js/shaders/FXAAShader.js"></script>
 <script src="3rdparty/js/shaders/BokehShader.js"></script>
 <script src="3rdparty/js/shaders/FilmShader.js"></script>
 <script src="3rdparty/js/shaders/FocusShader.js"></script>

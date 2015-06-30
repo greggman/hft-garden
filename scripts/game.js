@@ -73,7 +73,7 @@ requirejs(
     shotInterval: 1,
     shotVelocity: 400,
     numLocalPlayers: 0,
-    playerSize: 4,
+    playerSize: 2,
     playerRotationTargetSpeed: 5,
     playerSlowDownSpeed: 2.5,
     playerVelocity: 2,
@@ -84,12 +84,12 @@ requirejs(
     playerFlapMaxSpeed: 40,
     playerFlapRange: 0.1,
     playerFlapAngleRange: Math.PI * 0.25,
-    goalSize: 1,
+    goalSize: 0.5,
     goalHitSize: 0.05,
     haveServer: true,
     areaSize: 300,
     time: 0,
-    clearColor: 0xC0FFFF,
+    clearColor: 0x000000, //0xC0FFFF,
     fieldOfView: 20,
     zNear: 50,
     zFar: 2000,
@@ -103,7 +103,6 @@ requirejs(
     corners: [],
     treeBranchRadius: 0.66,
     treeBranchLength: 8,
-    treeGirth: 2,
     treeRootLength: 4,
     treeMinLength: 2,
     treeMaxLength: 4,
@@ -111,7 +110,9 @@ requirejs(
     treeMaxBend: 0.2,
     treeMinTwist: -0.5,
     treeMaxTwist: 0.5,
-    numTrees: 90,
+    treeGirth: 0.2, //1,
+    numTrees: 40,
+    treeDepth: 3,
     leafScaleShrink: 0.9,
     leafScale: 3,
   };
@@ -132,6 +133,7 @@ requirejs(
   g_canvas = $("canvas");
   var renderer = new THREE.WebGLRenderer({canvas: g_canvas});
   g_services.renderer = renderer;
+  renderer.autoClear = false;
   var camera = new THREE.PerspectiveCamera(globals.fieldOfView, g_canvas.clientWidth / g_canvas.clientHeight, globals.zNear, globals.zFar);
   g_services.camera = camera;
 
@@ -142,7 +144,7 @@ requirejs(
   geometry.playerMesh = new THREE.CylinderGeometry(
     0, 1, 2, 4, 1, false);
   geometry.treeMesh = new THREE.CylinderGeometry(
-    globals.treeBranchRadius, 1, 1, 4, 4, 1, false);
+    globals.treeBranchRadius * globals.treeGirth, globals.treeGirth, 1, 4, 4, 1, false);
   geometry.treeMesh.applyMatrix((new THREE.Matrix4()).makeTranslation(0, 0.5, 0));
   geometry.shotMesh = new THREE.BoxGeometry(10, 10, 10);
   geometry.ballMesh = new THREE.SphereGeometry(0.4, 8, 4);
@@ -193,26 +195,46 @@ requirejs(
     g_services.shaders[element.id] = element.text;
   });
   var textureInfos = {
-    blueWing: {
-      url: "assets/blue-wing.png",
-      baseColor: 0x30b8DA,
-      adjustRange: [0.4, 0.9],
+    simpleWing01: {
+      url: "assets/simple-wing-01.png",
+      adjustRange: [0, 1],
+      baseColor: 0xDE2281,
     },
-    monarchWing: {
-      url: "assets/monarch-wing.png",
-      baseColor: 0xF0A020,
-      adjustRange: [0.0, 0.5],
+    simpleWing02: {
+      url: "assets/simple-wing-02.png",
+      adjustRange: [0, 1],
+      baseColor: 0xDE2281,
     },
-    limeWing: {
-      url: "assets/lime-wing.png",
-      baseColor: 0xD7C770,
-      adjustRange: [0.0, 0.5],
+    simpleWing03: {
+      url: "assets/simple-wing-03.png",
+      adjustRange: [0, 1],
+      baseColor: 0xDE2281,
     },
-    redWing: {
-      url: "assets/red-wing.png",
-      baseColor: 0xD40618,
-      adjustRange: [0.0, 1.0],
+    simpleWing04: {
+      url: "assets/simple-wing-04.png",
+      adjustRange: [0, 1],
+      baseColor: 0xDE2281,
     },
+//    blueWing: {
+//      url: "assets/blue-wing.png",
+//      baseColor: 0x30b8DA,
+//      adjustRange: [0.4, 0.9],
+//    },
+//    monarchWing: {
+//      url: "assets/monarch-wing.png",
+//      baseColor: 0xF0A020,
+//      adjustRange: [0.0, 0.5],
+//    },
+//    limeWing: {
+//      url: "assets/lime-wing.png",
+//      baseColor: 0xD7C770,
+//      adjustRange: [0.0, 0.5],
+//    },
+//    redWing: {
+//      url: "assets/red-wing.png",
+//      baseColor: 0xD40618,
+//      adjustRange: [0.0, 1.0],
+//    },
     leaf01: {
       url: "assets/leaf-01.png",
       baseColor: 0x37651C,
@@ -231,10 +253,14 @@ requirejs(
   };
 
   g_services.wingTextures = [
-    textureInfos.blueWing,
-    textureInfos.monarchWing,
-    textureInfos.limeWing,
-    textureInfos.redWing,
+//    textureInfos.blueWing,
+//    textureInfos.monarchWing,
+//    textureInfos.limeWing,
+//    textureInfos.redWing,
+    textureInfos.simpleWing01,
+    textureInfos.simpleWing02,
+    textureInfos.simpleWing03,
+    textureInfos.simpleWing04,
   ];
 
   g_services.leafTextures = [
@@ -305,6 +331,27 @@ requirejs(
     }
   }
 
+  // ---------------------------------------------------
+
+  var renderScene = new THREE.RenderPass( scene, camera );
+
+  var effectBloom = new THREE.BloomPass( 1 );
+  var effectCopy = new THREE.ShaderPass( THREE.CopyShader );
+  var effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
+
+  var width = window.innerWidth || 2;
+  var height = window.innerHeight || 2;
+
+  var composer = new THREE.EffectComposer( renderer );
+  composer.addPass( renderScene );
+  composer.addPass( effectFXAA );
+  composer.addPass( effectBloom );
+  composer.addPass( effectCopy );
+
+  effectCopy.renderToScreen = true;
+
+  // ---------------------------------------------------
+
   resize();
   g_services.globals = globals;
   g_services.renderer = renderer;
@@ -328,7 +375,8 @@ requirejs(
     var tree = new Tree(g_services, {
       rootLength: globals.treeRootLength + rand.range(10),
       numBranches: haveLeaves ? 1 : 2,
-      numLeaves: haveLeaves ? 2 : 0,
+      numLeaves: 0, //haveLeaves ? 2 : 0,
+      depth: globals.treeDepth,
     });
     tree.root.position.x = rand.range(globals.areaLeft, globals.areaRight);
     tree.root.position.z = rand.range(globals.areaLeft, globals.areaRight);
@@ -368,67 +416,30 @@ requirejs(
 //  g_services.goal = new Goal(g_services);
 
 
-  var effectFocus = new THREE.ShaderPass( THREE.FocusShader );
-
-  var effectCopy = new THREE.ShaderPass( THREE.CopyShader );
-  var effectFilm = new THREE.FilmPass( 0.5, 0.25, 2048, false );
-
-  var bokehPass = new THREE.BokehPass( scene, camera, {
-      focus: 1.0,
-      aperture: 0.025,
-      maxblur: 1.0,
-
-      width: window.innerWidth,
-      height: window.innerHeight,
-  } );
-
-  var shaderBlur = THREE.TriangleBlurShader;
-  var effectBlurX = new THREE.ShaderPass( shaderBlur, 'texture' );
-  var effectBlurY = new THREE.ShaderPass( shaderBlur, 'texture' );
-
-  var radius = 15;
-  var blurAmountX = radius / window.innerWidth;
-  var blurAmountY = radius / window.innerHeight;
-
-  var hblur = new THREE.ShaderPass( THREE.HorizontalBlurShader );
-  var vblur = new THREE.ShaderPass( THREE.VerticalBlurShader);
-
-  hblur.uniforms[ 'h' ].value =  1 / window.innerWidth;
-  vblur.uniforms[ 'v' ].value =  1 / window.innerHeight;
-
-  effectBlurX.uniforms[ 'delta' ].value = new THREE.Vector2( blurAmountX, 0 );
-  effectBlurY.uniforms[ 'delta' ].value = new THREE.Vector2( 0, blurAmountY );
-
-  effectFocus.uniforms[ 'sampleDistance' ].value = 0.99; //0.94
-  effectFocus.uniforms[ 'waveFactor' ].value = 0.003;  //0.00125
-
-  var renderScene = new THREE.RenderPass( scene, camera );
-
-  var composer = new THREE.EffectComposer( renderer );
-  composer.addPass( renderScene );
-  composer.addPass( bokehPass );
-  //composer.addPass( hblur );
-  //composer.addPass( vblur );
-  //composer.addPass( effectBlurX );
-  //composer.addPass( effectBlurY );
-  //composer.addPass( effectCopy );
-  //composer.addPass( effectFocus );
-  //composer.addPass( effectFilm );
-
-  bokehPass.renderToScreen = true;
-  //hblur.renderToScreen = true;
-  //vblur.renderToScreen = true;
-  //effectBlurY.renderToScreen = true;
-  //effectFocus.renderToScreen = true;
-  //effectCopy.renderToScreen = true;
-  //effectFilm.renderToScreen = true;
 
   for (var ii = 0; ii < globals.numLocalPlayers; ++ii) {
     var netPlayer = new LocalNetPlayer();
-    g_localPlayers.push({
+    var localPlayer = {
       player: playerManager.createPlayer("LocalPlayer" + ii, netPlayer),
       netPlayer: netPlayer,
-    });
+      speed: rand.plusMinus(30),
+      orientation: {
+        a: Math.random() * 360,
+        b: 0,
+        g: 90,
+        x: 0,
+        y: 0,
+        z: 0,
+        abs: false,
+      },
+      process: function() {
+        this.orientation.b = math.emod(this.orientation.b + this.speed * globals.elapsedTime, 360);
+        this.netPlayer.sendEvent('orient', this.orientation);
+      },
+    };
+    netPlayer.sendEvent('button', { id: 0, pressed: true });
+    g_services.entitySystem.addEntity(localPlayer);
+    g_localPlayers.push(localPlayer);
   }
 
 
@@ -439,7 +450,8 @@ requirejs(
       camera.updateProjectionMatrix();
       renderer.setSize(g_canvas.clientWidth, g_canvas.clientHeight, false);
 
-//      camera.matrixWorldInverse.getInverse( camera.matrixWorld );
+      effectFXAA.uniforms[ 'resolution' ].value.set( 1 / g_canvas.clientWidth, 1 / g_canvas.clientHeight );
+      composer.reset();
 
       camera.updateMatrixWorld();
       camera.matrixWorldInverse.getInverse( camera.matrixWorld );
@@ -496,10 +508,10 @@ requirejs(
 
     entitySys.processEntities();
     renderer.setClearColor(globals.clearColor, 1);
-    renderer.render(scene, camera);
     scene.fog.color.setHex( globals.clearColor );
-//    renderer.clear();
-//    composer.render( 0.1 );
+//    renderer.render(scene, camera);
+    renderer.clear();
+    composer.render();
 
     if (globals.showSphere) {
       sphereMesh.rotation.x += globals.elapsedTime * 0.2;
