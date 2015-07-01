@@ -43,6 +43,7 @@ requirejs(
     './playermanager',
     './rand',
     './tree',
+    './tweeny',
   ], function(
     GameServer,
     GameSupport,
@@ -54,7 +55,8 @@ requirejs(
     math,
     PlayerManager,
     rand,
-    Tree) {
+    Tree,
+    tweeny) {
 
   var g_canvas;
   var g_corners = [];
@@ -68,6 +70,7 @@ requirejs(
     audio: true,
     showCorners: false,
     showSphere: false,
+    showCollision: false,
     maxShots: 2,
     shotDuration: 5,
     shotInterval: 1,
@@ -115,6 +118,13 @@ requirejs(
     treeDepth: 3,
     leafScaleShrink: 0.9,
     leafScale: 3,
+    numPetals: 5,
+    bloomDuration: 15,
+    fallDuration: 5,
+    bloomStrength: 1,
+    bloomKernelSize: 25,
+    bloomSigma: 4,
+    bloomResolution: 256,
   };
 
   window.g = globals;
@@ -136,6 +146,9 @@ requirejs(
   renderer.autoClear = false;
   var camera = new THREE.PerspectiveCamera(globals.fieldOfView, g_canvas.clientWidth / g_canvas.clientHeight, globals.zNear, globals.zFar);
   g_services.camera = camera;
+  var entitySys = new EntitySystem();
+  g_services.entitySystem = entitySys;
+  g_services.tmgr = new tweeny.TweenManager();
 
   var scene = new THREE.Scene();
   g_services.scene = scene;
@@ -147,9 +160,11 @@ requirejs(
     globals.treeBranchRadius * globals.treeGirth, globals.treeGirth, 1, 4, 4, 1, false);
   geometry.treeMesh.applyMatrix((new THREE.Matrix4()).makeTranslation(0, 0.5, 0));
   geometry.shotMesh = new THREE.BoxGeometry(10, 10, 10);
-  geometry.ballMesh = new THREE.SphereGeometry(0.4, 8, 4);
-  geometry.goalMesh = new THREE.SphereGeometry(globals.goalSize, 8, 4);
+  geometry.ballMesh = new THREE.SphereBufferGeometry(0.4, 8, 4);
+  geometry.goalMesh = new THREE.SphereBufferGeometry(globals.goalSize, 8, 4);
   geometry.goalMesh.applyMatrix((new THREE.Matrix4()).makeTranslation(0, globals.goalSize * 0.9, 0));
+  geometry.petalMesh = new THREE.SphereBufferGeometry(globals.goalSize, 8, 4);
+  geometry.petalMesh.applyMatrix((new THREE.Matrix4()).makeScale(1, 3, 0.1));
   geometry.wingMesh = new THREE.PlaneBufferGeometry(1, 1, 1, 1);
   geometry.leafMesh = new THREE.PlaneBufferGeometry(1, 1, 1, 1);
   geometry.leafMesh.applyMatrix((new THREE.Matrix4()).makeTranslation(-0.5, 0, 0));
@@ -286,7 +301,7 @@ requirejs(
 //  scene.add(light1);
 
   if (globals.showSphere) {
-    var sphere = new THREE.SphereGeometry(50, 16, 8);
+    var sphere = new THREE.SphereBufferGeometry(50, 16, 8);
     var material = new THREE.MeshPhongMaterial({
       ambient: 0x030303,
       color: 0x0000FF,
@@ -335,9 +350,10 @@ requirejs(
 
   var renderScene = new THREE.RenderPass( scene, camera );
 
-  var effectBloom = new THREE.BloomPass( 1 );
+  var effectBloom = new THREE.BloomPass( globals.bloomStrength, globals.bloomKernelSize, globals.bloomSigma, globals.bloomResolution );
   var effectCopy = new THREE.ShaderPass( THREE.CopyShader );
   var effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
+  g_services.bloom = effectBloom;
 
   var width = window.innerWidth || 2;
   var height = window.innerHeight || 2;
@@ -355,8 +371,6 @@ requirejs(
   resize();
   g_services.globals = globals;
   g_services.renderer = renderer;
-  var entitySys = new EntitySystem();
-  g_services.entitySystem = entitySys;
   var playerManager = new PlayerManager(g_services);
   g_services.playerManager = playerManager;
 
@@ -507,6 +521,8 @@ requirejs(
     treeRoot.rotation.y = globals.gameTime * 0.01;
 
     entitySys.processEntities();
+    g_services.tmgr.update(globals.elapsedTime);
+
     renderer.setClearColor(globals.clearColor, 1);
     scene.fog.color.setHex( globals.clearColor );
 //    renderer.render(scene, camera);
