@@ -60,9 +60,10 @@ define(
       this.netPlayer = netPlayer;
 //      this.mesh = new THREE.Mesh(services.geometry.playerMesh, this.material);
 //      this.leaf = new THREE.Object3D();
-      var wingNdx = playerNumber++;
+      var wingNdx = playerNumber % services.wingTextures.length;
       var colorNdx = playerNumber; //wingNdx / services.wingTextures.length | 0;
-      var wing = services.wingTextures[wingNdx % services.wingTextures.length];
+      ++playerNumber;
+      var wing = services.wingTextures[wingNdx];
       // Pick a color
       var hueAdjust = (((colorNdx & 0x01) << 5) |
                        ((colorNdx & 0x02) << 3) |
@@ -81,7 +82,15 @@ define(
       baseHsv[1] = math.clamp(0, 1, baseHsv[1] + satAdjust);
       baseHsv[2] = math.clamp(0, 1, baseHsv[2] + valueAdjust);
       var cssColor = colorUtils.makeCSSColorFromRgba01Array(colorUtils.hsvToRgb01(baseHsv[0], baseHsv[1], baseHsv[2]));
-      netPlayer.sendCmd('setColor', {color: cssColor});
+      netPlayer.sendCmd('setColor', {
+        color: cssColor,
+        wingNdx: wingNdx,
+        hsvAdjust: {
+          h: hueAdjust,
+          s: satAdjust,
+          v: valueAdjust,
+        },
+      });
       var material = new THREE.ShaderMaterial( {
         side: THREE.DoubleSide,
         transparent: true,

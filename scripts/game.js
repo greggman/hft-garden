@@ -355,9 +355,6 @@ requirejs(
   var effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
   g_services.bloom = effectBloom;
 
-  var width = window.innerWidth || 2;
-  var height = window.innerHeight || 2;
-
   var composer = new THREE.EffectComposer( renderer );
   composer.addPass( renderScene );
   composer.addPass( effectFXAA );
