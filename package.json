@@ -7,7 +7,10 @@
     "category": "example",
     "gameId": "hft-garden",
     "gameType": "html",
-    "minPlayers": 1
+    "minPlayers": 1,
+    "ignore": [
+      "/src/"
+    ]
   },
   "name": "Garden",
   "private": false,
