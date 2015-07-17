@@ -65,31 +65,30 @@ define(
       ++playerNumber;
       var wing = services.wingTextures[wingNdx];
       // Pick a color
-      var hueAdjust = (((colorNdx & 0x01) << 5) |
-                       ((colorNdx & 0x02) << 3) |
-                       ((colorNdx & 0x04) << 1) |
-                       ((colorNdx & 0x08) >> 1) |
-                       ((colorNdx & 0x10) >> 3) |
-                       ((colorNdx & 0x20) >> 5)) / 64;
-      var valueAdjust = (colorNdx & 0x08) != 0 ? -0.2 : 0.0;
-      var satAdjust   = (colorNdx & 0x04) != 0 ? -0.5 : 0.0;
+      var hsvAdjust = {
+        h: (((colorNdx & 0x01) << 5) |
+            ((colorNdx & 0x02) << 3) |
+            ((colorNdx & 0x04) << 1) |
+            ((colorNdx & 0x08) >> 1) |
+            ((colorNdx & 0x10) >> 3) |
+            ((colorNdx & 0x20) >> 5)) / 64,
+        s: (colorNdx & 0x10) != 0 ? -0.5 : 0.0,
+        v: (colorNdx & 0x20) != 0 ? -0.2 : 0.0,
+      };
+      this.hsvAdjust = hsvAdjust;
 
       var baseHsv = colorUtils.rgb255ToHsv(
           (wing.baseColor >> 16) & 0xFF,
           (wing.baseColor >>  8) & 0xFF,
           (wing.baseColor >>  0) & 0xFF);
-      baseHsv[0] = math.emod(baseHsv[0] + hueAdjust, 1);
-      baseHsv[1] = math.clamp(0, 1, baseHsv[1] + satAdjust);
-      baseHsv[2] = math.clamp(0, 1, baseHsv[2] + valueAdjust);
+      baseHsv[0] = math.emod(baseHsv[0] + hsvAdjust.h, 1);
+      baseHsv[1] = math.clamp(0, 1, baseHsv[1] + hsvAdjust.s);
+      baseHsv[2] = math.clamp(0, 1, baseHsv[2] + hsvAdjust.v);
       var cssColor = colorUtils.makeCSSColorFromRgba01Array(colorUtils.hsvToRgb01(baseHsv[0], baseHsv[1], baseHsv[2]));
       netPlayer.sendCmd('setColor', {
         color: cssColor,
         wingNdx: wingNdx,
-        hsvAdjust: {
-          h: hueAdjust,
-          s: satAdjust,
-          v: valueAdjust,
-        },
+        hsvAdjust: hsvAdjust,
       });
       var material = new THREE.ShaderMaterial( {
         side: THREE.DoubleSide,
@@ -98,12 +97,13 @@ define(
         fragmentShader: services.shaders["hsva-fs"],
         uniforms: {
           adjustRange: { type: "v2", value: new THREE.Vector2(wing.adjustRange[0], wing.adjustRange[1]), },
-          hsvaAdjust: { type: "v4", value: new THREE.Vector4(hueAdjust, satAdjust, valueAdjust, 0), },
+          hsvaAdjust: { type: "v4", value: new THREE.Vector4(hsvAdjust.h, hsvAdjust.s, hsvAdjust.v, 0), },
           texture: { type: "t", value: wing.texture },
         },
 depthTest: false,
       } );
       this.material = material;
+      this.oldButton = -1;
 
       this.root = new THREE.Object3D();
       this.mid  = new THREE.Object3D();
@@ -294,6 +294,12 @@ depthTest: false,
   Player.prototype.state_fly = function() {
     var globals = this.services.globals;
     this.updateOrientation();
+
+    if (this.buttons[0] !== this.oldButton) {
+      this.oldButton = this.buttons[0];
+      this.material.uniforms.hsvaAdjust.value.y = this.hsvAdjust.s + this.oldButton ? 0 : -0.2;
+      this.material.uniforms.hsvaAdjust.value.z = this.hsvAdjust.v + this.oldButton ? 0 : -0.4;
+    }
 
 
     if (!this.buttons[0]) {

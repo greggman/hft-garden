@@ -54,7 +54,8 @@ requirejs(
 
   var $ = document.getElementById.bind(document);
   var globals = {
-    //orientation: "portrait-primary",
+    orientation: "portrait-primary",
+    orientationOptional: true,  // Don't ask user to orient if their system doens't support it
     orientationRate: 1 / 10,
     releaseTime: 0.5,
     //debug: true,
@@ -81,6 +82,7 @@ requirejs(
   var g_lastMoveTime = Date.now() * 0.001;
   var g_redraw = true;
   var g_wingNdx = -1;
+  var g_offset = 20;
 
   misc.applyUrlSettings(globals);
   mobileHacks.fixHeightHack();
@@ -107,6 +109,11 @@ requirejs(
           data.hsvAdjust.h,
           data.hsvAdjust.s,
           data.hsvAdjust.v);
+      images.wings.darkImg = imageUtils.adjustHSV(
+          images.wings.img,
+          data.hsvAdjust.h,
+          data.hsvAdjust.s,
+          data.hsvAdjust.v - 0.5);
       g_redraw = true;
       g_wingNdx = data.wingNdx;
     }
@@ -116,6 +123,20 @@ requirejs(
 
     commonUI.setupStandardControllerUI(g_client, globals);
 
+    function drawBothHalfs(img) {
+      g_ctx.save();
+      g_ctx.drawImage(
+          img,
+          g_wingNdx * 256, 0, 256, 256,
+          -256, -128, 256, 256);
+      g_ctx.scale(-1, 1);
+      g_ctx.drawImage(
+          img,
+          g_wingNdx * 256, 0, 256, 256,
+          -256, -128, 256, 256);
+      g_ctx.restore();
+    }
+
     function draw() {
       if (g_wingNdx < 0) {
         return;
@@ -123,15 +144,9 @@ requirejs(
       g_ctx.clearRect(0, 0, g_ctx.canvas.width, g_ctx.canvas.height);
       g_ctx.save();
       g_ctx.translate(g_ctx.canvas.width / 2 | 0, g_ctx.canvas.height / 2 | 0);
-      g_ctx.drawImage(
-          images.wings.coloredImg,
-          g_wingNdx * 256, 0, 256, 256,
-          -256, -128, 256, 256);
-      g_ctx.scale(-1, 1);
-      g_ctx.drawImage(
-          images.wings.coloredImg,
-          g_wingNdx * 256, 0, 256, 256,
-          -256, -128, 256, 256);
+      drawBothHalfs(images.wings.darkImg);
+      g_ctx.translate(0, -g_offset);
+      drawBothHalfs(images.wings.coloredImg);
       g_ctx.restore();
     }
 
@@ -152,22 +167,26 @@ requirejs(
   //      { element: $("input"), callback: function(e) { handleButton(e.pressed, 0); }, }, // eslint-disable-line
   //    ],
   //  });
-    function handlePointerMove(id) {
+    function handlePointerMove(id, press) {
       g_lastMoveTime = Date.now() * 0.001;
-      handleButton(true, id);
+      handleButton(press, id);
+      g_offset = press ? 2 : 20;
+      draw();
     }
 
-    function unpressButton() {
-      var now = Date.now() * 0.001;
-      if (now - g_lastMoveTime > globals.releaseTime) {
-        handleButton(false, 0);
-      }
-    }
+//    function unpressButton() {
+//      var now = Date.now() * 0.001;
+//      if (now - g_lastMoveTime > globals.releaseTime) {
+//        handleButton(false, 0);
+//      }
+//      draw(20);
+//    }
 
-    $("input").addEventListener('pointermove', function() { handlePointerMove(0); }, false);
-    $("input").addEventListener('pointerdown', function() { handlePointerMove(0); }, false);
-    $("input").addEventListener('pointerup', function() { handlePointerMove(0); }, false);
-    setInterval(unpressButton, 100);
+    $("input").addEventListener('pointermove', function() { handlePointerMove(0, true); }, false);
+    $("input").addEventListener('pointerdown', function() { handlePointerMove(0, true); }, false);
+    $("input").addEventListener('pointerup', function() { handlePointerMove(0), false; }, false);
+    $("input").addEventListener('pointerout', function() { handlePointerMove(0), false; }, false);
+//    setInterval(unpressButton, 100);
 
     var gn = new GyroNorm();
 

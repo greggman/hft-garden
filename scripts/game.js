@@ -206,7 +206,7 @@ requirejs(
   sky.uniforms.sunPosition.value.copy(sunSphere.position);
 
   g_services.shaders = {};
-  Array.prototype.forEach.call(document.querySelectorAll("script[type=shader"), function(element) {
+  Array.prototype.forEach.call(document.querySelectorAll("script[type=shader]"), function(element) {
     g_services.shaders[element.id] = element.text;
   });
   var textureInfos = {
@@ -371,8 +371,28 @@ requirejs(
   var playerManager = new PlayerManager(g_services);
   g_services.playerManager = playerManager;
 
-  // 50, 69
-  scene.fog = new THREE.Fog(globals.clearColor, 60, 90);//globals.front, globals.back);
+  // ---------------------------------------------------
+
+  if (globals.mirror) {
+    var planeGeo = new THREE.PlaneBufferGeometry( 200.1, 200.1 );
+
+    // MIRROR planes
+    var WIDTH = 2048;
+    var HEIGHT = 2084;
+    var groundMirror = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color: 0x777797 } );
+g_services.gm = groundMirror;
+    var mirrorMesh = new THREE.Mesh( planeGeo, groundMirror.material );
+    mirrorMesh.add( groundMirror );
+    mirrorMesh.rotateX( - Math.PI / 2 );
+    mirrorMesh.position.z = math.lerp(globals.areaFront, globals.areaBack, 0.5);
+    mirrorMesh.position.y = globals.areaBottom + 4;
+    scene.add( mirrorMesh );
+  } else {
+    // 50, 69
+    scene.fog = new THREE.Fog(globals.clearColor, 60, 90);//globals.front, globals.back);
+  }
+
+  // ---------------------------------------------------
 
   var treeRoot = new THREE.Object3D();
   g_services.treeRoot = treeRoot;
@@ -472,7 +492,7 @@ requirejs(
       viewProjMat.multiplyMatrices( camera.projectionMatrix, camera.matrixWorldInverse );
       inverseViewProjMat.getInverse( viewProjMat );
 
-      function clipZ(z) {
+      var clipZ = function(z) {
           var rangeInv = 1.0 / (globals.zNear - globals.zFar);
           return (z * (globals.zNear + globals.zFar) * rangeInv +
                   globals.zNear * globals.zFar * rangeInv * 2) / -z;
@@ -521,9 +541,14 @@ requirejs(
     g_services.tmgr.update(globals.elapsedTime);
 
     renderer.setClearColor(globals.clearColor, 1);
-    scene.fog.color.setHex( globals.clearColor );
-//    renderer.render(scene, camera);
+    if (scene.fog) {
+      scene.fog.color.setHex( globals.clearColor );
+    }
+    //    renderer.render(scene, camera);
     renderer.clear();
+    if (groundMirror) {
+      groundMirror.render();
+    }
     composer.render();
 
     if (globals.showSphere) {

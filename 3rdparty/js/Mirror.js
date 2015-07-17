@@ -6,7 +6,8 @@ THREE.ShaderLib['mirror'] = {
 
 	uniforms: { "mirrorColor": { type: "c", value: new THREE.Color(0x7F7F7F) },
 				"mirrorSampler": { type: "t", value: null },
-				"textureMatrix" : { type: "m4", value: new THREE.Matrix4() }
+				"textureMatrix" : { type: "m4", value: new THREE.Matrix4() },
+				"time": { type: "f", value: 0 },
 	},
 
 	vertexShader: [
@@ -28,9 +29,11 @@ THREE.ShaderLib['mirror'] = {
 	].join("\n"),
 
 	fragmentShader: [
+"#extension GL_OES_standard_derivatives : enable",
 
 		"uniform vec3 mirrorColor;",
 		"uniform sampler2D mirrorSampler;",
+		"uniform float time;",
 
 		"varying vec4 mirrorCoord;",
 
@@ -40,10 +43,13 @@ THREE.ShaderLib['mirror'] = {
 		
 		"void main() {",
 
-			"vec4 color = texture2DProj(mirrorSampler, mirrorCoord);",
+			"float offset = 1.0 - dFdy(mirrorCoord.y);",
+			"vec4 color = texture2DProj(mirrorSampler, mirrorCoord + vec4(sin(offset * 100.0) * (offset) * 1.0, 0, 0, 0));",
+
+//			"vec4 color = texture2DProj(mirrorSampler, mirrorCoord));",
 			"color = vec4(blendOverlay(mirrorColor.r, color.r), blendOverlay(mirrorColor.g, color.g), blendOverlay(mirrorColor.b, color.b), 1.0);",
 
-			"gl_FragColor = color;",
+			"gl_FragColor = color + vec4(mod(time, 1.0), 0, 0, 1);",
 
 		"}"
 
@@ -112,8 +118,10 @@ THREE.Mirror = function ( renderer, camera, options ) {
 	this.mirrorCamera = this.camera.clone();
 	this.mirrorCamera.matrixAutoUpdate = true;
 
-	this.texture = new THREE.WebGLRenderTarget( width, height );
-	this.tempTexture = new THREE.WebGLRenderTarget( width, height );
+	var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
+
+	this.texture = new THREE.WebGLRenderTarget( width, height, parameters );
+	this.tempTexture = new THREE.WebGLRenderTarget( width, height, parameters );
 
 	var mirrorShader = THREE.ShaderLib[ "mirror" ];
 	var mirrorUniforms = THREE.UniformsUtils.clone( mirrorShader.uniforms );
@@ -136,6 +144,8 @@ THREE.Mirror = function ( renderer, camera, options ) {
 		this.tempTexture.generateMipmaps = false;
 
 	}
+
+	this.then = Date.now();
 
 	this.updateTextureMatrix();
 	this.render();
@@ -251,6 +261,7 @@ THREE.Mirror.prototype.render = function () {
 
 	this.matrixNeedsUpdate = true;
 
+
 	// Render the mirrored view of the current scene into the target texture
 	var scene = this;
 
@@ -262,7 +273,14 @@ THREE.Mirror.prototype.render = function () {
 
 	if ( scene !== undefined && scene instanceof THREE.Scene) {
 
+		// We can't render ourself to ourself
+		var visible = this.material.visible;
+		this.material.visible = false;
+		this.material.uniforms.time.value = (Date.now() - this.then) * 0.001;
+
 		this.renderer.render( scene, this.mirrorCamera, this.texture, true );
+
+		this.material.visible = visible;
 
 	}
 
