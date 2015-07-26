@@ -7,7 +7,7 @@ This is an installation for the [HappyFunTimes system](http://docs.happyfuntimes
 
 If you want to see this running the steps are
 
-1.  Install and Run [HappyFunTimes](http://docs.happyfuntimes.net/docs/install.html)
+1.  Install and Run [HappyFunTimes](http://docs.happyfuntimes.net/install.html)
 2.  Install [HFT-Garden](http://superhappyfuntimes.net/game/hft-garden)
 3.  Run it (after installing button under icon should change to `Launch`. Click that)
 4.  Make sure your phone IS ON THE SAME WIFI as your computer then on your phone
