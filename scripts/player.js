@@ -31,11 +31,11 @@
 "use strict";
 
 define(
-  [ 'hft/misc/cssparse',
+  [ './cssparse',
     './math',
     './rand',
     './shot',
-    '../bower_components/hft-utils/dist/colorutils',
+    '../3rdparty/hft-utils/dist/colorutils',
   ], function(
     CSSParse,
     math,
@@ -149,7 +149,7 @@ depthTest: false,
       netPlayer.addEventListener('disconnect', Player.prototype.handleDisconnect.bind(this));
       netPlayer.addEventListener('orient', Player.prototype.handleOrient.bind(this));
       netPlayer.addEventListener('button', Player.prototype.handleButton.bind(this));
-//      netPlayer.addEventListener('setColor', Player.prototype.handleSetColor.bind(this));
+      netPlayer.addEventListener('_hft_setname_', () => {});
 
       var g = this.services.globals;
 

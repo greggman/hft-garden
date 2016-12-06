@@ -30,14 +30,20 @@
  */
 "use strict";
 
+const isDevMode = process.env.NODE_ENV === 'development';
+const requirejs = require('requirejs');
+requirejs.config({
+  nodeRequire: require,
+  baseUrl: __dirname,
+});
+
 // Start the main app logic.
-requirejs(
-  [ 'hft/gameserver',
-    'hft/gamesupport',
-    'hft/localnetplayer',
-    'hft/misc/misc',
-    '../bower_components/hft-utils/dist/audio',
-    '../bower_components/hft-utils/dist/entitysystem',
+requirejs([
+    'happyfuntimes',
+    'hft-game-utils',
+    'hft-sample-ui',
+    '../3rdparty/hft-utils/dist/audio',
+    '../3rdparty/hft-utils/dist/entitysystem',
     './goal',
     './math',
     './playermanager',
@@ -45,10 +51,9 @@ requirejs(
     './tree',
     './tweeny',
   ], function(
-    GameServer,
-    GameSupport,
-    LocalNetPlayer,
-    Misc,
+    happyfuntimes,
+    gameUtils,
+    sampleUI,
     AudioManager,
     EntitySystem,
     Goal,
@@ -57,6 +62,27 @@ requirejs(
     rand,
     Tree,
     tweeny) {
+
+  var GameServer = happyfuntimes.GameServer;
+  var LocalNetPlayer = happyfuntimes.LocalNetPlayer;
+  var GameSupport = gameUtils.gameSupport;
+  var Misc = sampleUI.misc;
+
+  const instructionElem = $("instruction");
+  instructionElem.addEventListener('click', hideInstructions);
+  instructionElem.addEventListener('touchstart', hideInstructions);
+  instructionElem.addEventListener('pointerdown', hideInstructions);
+  showInstructions();
+  $("outer").addEventListener('click', showInstructions);
+  $("outer").addEventListener('touchstart', showInstructions);
+  $("outer").addEventListener('pointerdown', showInstructions);
+
+  function hideInstructions() {
+    instructionElem.style.display = "none";
+  }
+  function showInstructions() {
+    instructionElem.style.display = "block";
+  }
 
   var g_canvas;
   var g_corners = [];
@@ -135,6 +161,7 @@ requirejs(
   }
 
   function startPlayer(netPlayer, name) {
+    hideInstructions();
     return playerManager.createPlayer(name, netPlayer);
   }
 

@@ -31,26 +31,26 @@
 "use strict";
 
 // Start the main app logic.
-requirejs(
-  [ 'hft/gameclient',
-    'hft/commonui',
-    'hft/misc/misc',
-    'hft/misc/mobilehacks',
-    'hft/misc/touch',
-    '../bower_components/hft-utils/dist/imageloader',
-    '../bower_components/hft-utils/dist/imageutils',
+requirejs([
+    '../node_modules/happyfuntimes/dist/hft',
+    '../node_modules/hft-sample-ui/dist/sample-ui',
+    '../3rdparty/hft-utils/dist/imageloader',
+    '../3rdparty/hft-utils/dist/imageutils',
     '../3rdparty/chroma.min',
     './sampler',
   ], function(
-    GameClient,
-    commonUI,
-    misc,
-    mobileHacks,
-    touch,
+    hft,
+    sampleUI,
     imageLoader,
     imageUtils,
     chroma,
     Sampler) {
+
+  var GameClient = hft.GameClient;
+  var commonUI = sampleUI.commonUI;
+  var misc = sampleUI.misc;
+  var mobileHacks = sampleUI.mobileHacks;
+  var touch = sampleUI.touch;
 
   var $ = document.getElementById.bind(document);
   var globals = {
